@@ -44,10 +44,10 @@ class TSPInstance:
   
   def get_tour_distance(self, tour):
     """
-    Calcula a distância percorrida por um caminho
+    Calcula a distância percorrida por um tour
     
     Args:
-      tour (list): Um caminho possível para a instância
+      tour (list): Um tour possível para a instância
     """
     
     total_distance = self.distance_matrix[tour[self.num_cities-1]][tour[0]]

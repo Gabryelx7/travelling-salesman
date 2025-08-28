@@ -24,7 +24,7 @@ class SimulatedAnnealing:
     Executa o algoritmo de busca
 
     Retorna:
-      Uma tupla contendo o melhor caminho encontrado e a distância percorrida por esse caminho
+      Uma tupla contendo o melhor tour encontrado e a distância percorrida por esse tour
       (list, float)
     """
     if self.instance.num_cities < 2:
