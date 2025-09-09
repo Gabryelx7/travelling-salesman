@@ -1,4 +1,5 @@
 import os
+import statistics
 from tsp_instance import TSPInstance
 from uninformed_search import BreadthFirstSearch
 from simulated_annealing import SimulatedAnnealing
@@ -15,7 +16,7 @@ def choose_instance():
       n = int(input("Número de cidades (padrão 10): ").strip() or "10")
     except ValueError:
       n = 10
-    return TSPInstance(n)
+    return lambda: TSPInstance(n), f"aleatória ({n} cidades)"
 
   elif choice == '2':
     patterns_dir = os.path.join(os.path.dirname(__file__), 'TSPPatterns')
@@ -38,39 +39,63 @@ def choose_instance():
     else:
       path = input("Nenhum XML em TSPPatterns. Digite o caminho para o arquivo XML: ").strip()
 
-    try:
+    def make_from_xml():
       return TSPInstance(xml_path=path)
-    except Exception as e:
-      print(f"Erro ao carregar XML: {e}")
-      print("Voltando para geração aleatória (10 cidades).")
-      return TSPInstance(10)
+
+    return make_from_xml, f"XML: {path}"
 
   else:
     print("Escolha inválida, usando aleatório (10 cidades).")
-    return TSPInstance(10)
+    return lambda: TSPInstance(10), "aleatória (10 cidades)"
 
 
 if __name__ == '__main__':
-  tsp_problem = choose_instance()
+  make_instance, desc = choose_instance()
 
-  print(f"Instância com {tsp_problem.num_cities} cidades criada.")
+  try:
+    runs = int(input("Quantas execuções deseja rodar (padrão 1): ").strip() or "1")
+  except ValueError:
+    runs = 1
 
-  # bfs = BreadthFirstSearch(tsp_problem)
-  sa = SimulatedAnnealing(tsp_problem, 100, 0.99, 300)
-  ga = GeneticAlgorithm(tsp_problem)
+  # parâmetros padrão dos algoritmos
+  sa_params = { 'initial_temp': 100, 'cooling_rate': 0.99, 'iterations': 300 }
 
-  # bfs_tour, bfs_dist = bfs.solve()
-  sa_tour, sa_dist = sa.solve()
-  ga_tour, ga_dist = ga.solve()
+  # coletores de estatísticas
+  stats = {
+    #'BFS': [],
+    'SA': [],
+    'GA': []
+  }
 
-  #print("BFS result:") ## ta demorando demais pra num_cities > 10
-  #print(bfs_tour)
-  #print(bfs_dist)
+  for run in range(1, runs+1):
+    print(f"\nRun {run}/{runs} - instância: {desc}")
+    tsp_problem = make_instance()
 
-  print("Simulated Annealing result:")
-  print(sa_tour)
-  print(sa_dist)
+    #bfs = BreadthFirstSearch(tsp_problem)
+    sa = SimulatedAnnealing(tsp_problem, sa_params['initial_temp'], sa_params['cooling_rate'], sa_params['iterations'])
+    ga = GeneticAlgorithm(tsp_problem)
 
-  print("Genetic Algorithm result:")
-  print(ga_tour)
-  print(ga_dist)
+    #bfs_tour, bfs_dist = bfs.solve()
+    sa_tour, sa_dist = sa.solve()
+    ga_tour, ga_dist = ga.solve()
+
+    #print("BFS distance:", bfs_dist)
+    print("Simulated Annealing distance:", sa_dist)
+    print("Genetic Algorithm distance:", ga_dist)
+
+    #stats['BFS'].append(bfs_dist)
+    stats['SA'].append(sa_dist)
+    stats['GA'].append(ga_dist)
+
+  # imprimir estatísticas
+  def print_stats(name, values):
+    if not values:
+      return
+    mean = statistics.mean(values)
+    minimum = min(values)
+    maximum = max(values)
+    print(f"\n{name} — runs={len(values)}: media={mean:.4f}, min={minimum:.4f}, max={maximum:.4f}")
+
+  #print_stats('BFS', stats['BFS'])
+  print_stats('Simulated Annealing', stats['SA'])
+  print_stats('Genetic Algorithm', stats['GA'])
